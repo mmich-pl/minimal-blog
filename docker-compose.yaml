@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+  scylla:
+    image: scylladb/scylla
+    container_name: scylla
+    ports:
+      - "9042:9042"
+
+  # This is a temporary service that creates the schema and populates the scylla service and then this one shuts down
+  scylla-load-keyspace:
+    container_name: scylla-load-keyspace
+    image: scylladb/scylla
+    volumes:
+      - ./scripts/create_schema.cql:/scylla_scripts/1.cql
+      - ./scripts/initdb.sh:/scylla_scripts/initdb.sh
+    entrypoint: [ "bash", "/scylla_scripts/initdb.sh" ]
+
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-network
+
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - app-network
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    environment:
+      - MINIO_ACCESS_KEY=minio
+      - MINIO_SECRET_KEY=minio123
+    ports:
+      - "9000:9000"
+    volumes:
+      - minio-data:/data
+    command: server /data
+    networks:
+      - app-network
+
+volumes:
+  scylla-data:
+  redis-data:
+  mongo-data:
+  minio-data:
+
+networks:
+  app-network:
+    driver: bridge
