@@ -13,8 +13,8 @@ services:
     image: scylladb/scylla
     volumes:
       - ./scripts/create_schema.cql:/scylla_scripts/1.cql
-      - ./scripts/initdb.sh:/scylla_scripts/initdb.sh
-    entrypoint: [ "bash", "/scylla_scripts/initdb.sh" ]
+      - ./scripts/init-scylladb.sh:/scylla_scripts/init-scylladb.sh
+    entrypoint: [ "bash", "/scylla_scripts/init-scylladb.sh" ]
 
 
   redis:
@@ -34,8 +34,26 @@ services:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
+      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=Secret1!
+      - MONGO_INITDB_DATABASE=posts-storage
     networks:
       - app-network
+
+  neo4j:
+    image: neo4j:latest
+    container_name: neo4j-db
+    environment:
+      - NEO4J_AUTH=neo4j/Secret!1  # Sets the username (neo4j) and password
+      - NEO4J_dbms_default__database=blog  # Creates 'mydb' as the default database
+      - NEO4J_ACCEPT_LICENSE_AGREEMENT=yes
+    volumes:
+      - neo4j_data:/data  # Persistent data
+    ports:
+      - "7474:7474"   # Web UI
+      - "7687:7687"   # Bolt protocol
 
   minio:
     image: 'bitnami/minio:latest'
@@ -54,6 +72,7 @@ volumes:
   redis-data:
   mongo-data:
   minio-data:
+  neo4j_data:
 
 networks:
   app-network:
