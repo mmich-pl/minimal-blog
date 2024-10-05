@@ -2,12 +2,17 @@ package main
 
 import (
 	"context"
+	"log/slog"
+	"os"
+
 	"github.com/gocql/gocql"
 	"github.com/jonboulle/clockwork"
-	"log/slog"
+
+	"ndb/app/api"
+	"ndb/config"
+	_ "ndb/docs"
 	"ndb/logging"
 	logrepo "ndb/repositories/log"
-	"os"
 )
 
 func main() {
@@ -44,5 +49,15 @@ func main() {
 		),
 	)
 
-	log.InfoContext(context.Background(), "first log", slog.Any("status", "success"))
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		panic(err)
+	}
+
+	server, err := api.NewServer(ctx, log, cfg)
+	if err != nil {
+		panic(err)
+	}
+
+	server.Start(ctx)
 }

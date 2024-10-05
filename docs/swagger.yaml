@@ -1,0 +1,74 @@
+definitions:
+  api.PostResponse:
+    properties:
+      post_id:
+        type: string
+      status:
+        type: integer
+    type: object
+  errors.ErrResponse:
+    properties:
+      error:
+        description: application-level error message, for debugging
+        type: string
+      message:
+        description: user-level status message
+        type: string
+      status-code:
+        description: http response status code
+        type: integer
+    type: object
+info:
+  contact: {}
+paths:
+  /api/v1/posts:
+    post:
+      consumes:
+      - multipart/form-data
+      description: This endpoint allows users to create a new post by submitting text
+        data (title, content, thread_id, user_id) and an image file.
+      parameters:
+      - description: Image File
+        in: formData
+        name: image
+        required: true
+        type: file
+      - description: Title of the post
+        in: formData
+        name: title
+        required: true
+        type: string
+      - description: Content of the post
+        in: formData
+        name: content
+        required: true
+        type: string
+      - description: ID of the thread to which the post belongs
+        in: formData
+        name: thread
+        required: true
+        type: string
+      - description: ID of the user creating the post
+        in: formData
+        name: user_id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/api.PostResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.ErrResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errors.ErrResponse'
+      summary: Create a new post with an image
+      tags:
+      - posts
+swagger: "2.0"
