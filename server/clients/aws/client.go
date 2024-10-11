@@ -8,8 +8,6 @@ import (
 	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
 	"github.com/aws/aws-sdk-go/aws/awserr"
 	s4 "github.com/aws/aws-sdk-go/service/s3"
-	"image"
-	"image/jpeg"
 	"io"
 	"log/slog"
 	"net/http"
@@ -19,7 +17,7 @@ import (
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-	"ndb/config"
+	"ndb/server/config"
 )
 
 const presignTTL = 5 * time.Minute
@@ -135,20 +133,8 @@ func (s *Client) checkIdObjectExists(ctx context.Context, key string) error {
 	return nil
 }
 
-func (s *Client) UploadFile(ctx context.Context, file image.Image, url string) error {
-	var buf bytes.Buffer
-	err := jpeg.Encode(&buf, file, nil)
-	if err != nil {
-		return nil
-	}
-
-	if buf.Len() == 0 {
-		return errors.New("tried to upload empty image")
-	}
-
-	body := io.Reader(&buf)
-	fmt.Println(url)
-	request, err := http.NewRequestWithContext(ctx, http.MethodPut, url, body)
+func (s *Client) UploadFile(ctx context.Context, reader io.Reader, url string) error {
+	request, err := http.NewRequestWithContext(ctx, http.MethodPut, url, reader)
 	if err != nil {
 		return err
 	}

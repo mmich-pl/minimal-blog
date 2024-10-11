@@ -3,10 +3,9 @@ package models
 import "net/http"
 
 type CreatePostRequest struct {
-	Title   string `json:"title"`
-	UserID  int64  `json:"user_id"`
-	Thread  string `json:"thread"`
-	Content string `json:"content"`
+	Title  string `json:"title"`
+	UserID int64  `json:"user_id"`
+	Thread string `json:"thread"`
 }
 
 func (mr *CreatePostRequest) Bind(_ *http.Request) error {
@@ -41,11 +40,11 @@ func (mr *ThreadCreationResponse) Bind(_ *http.Request) error {
 }
 
 type Post struct {
-	PostID    string `json:"post_id"`
-	UserID    string `json:"user_id"`
-	Title     string `json:"title"`
-	Content   string `json:"content"`
-	ImageName string
+	PostID     string `json:"post_id"`
+	UserID     string `json:"user_id"`
+	ThreadID   string `json:"thread_id"`
+	Title      string `json:"title"`
+	ContentFle string `json:"content_fle"`
 
 	ViewCount int `json:"view_count"`
 }

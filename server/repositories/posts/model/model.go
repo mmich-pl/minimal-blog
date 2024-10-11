@@ -4,7 +4,7 @@ import (
 	"strconv"
 	"time"
 
-	"ndb/app/models"
+	"ndb/server/app/models"
 )
 
 type PostStatus string
@@ -16,19 +16,18 @@ const (
 )
 
 type Post struct {
-	PostID   string `json:"post_id"`
-	UserID   string `json:"user_id"`
-	ThreadID string `json:"thread_id"`
-	Title    string `json:"title"`
-	Content  string `json:"content"`
+	PostID   string
+	UserID   string
+	ThreadID string
+	Title    string
 
-	ImageName string `json:"image_name"`
+	ContentFile string
 
-	ViewCount int        `json:"view_count"`
-	Status    PostStatus `json:"status"`
-	CreatedAt string     `json:"created_at"`
-	UpdatedAt string     `json:"updated_at"`
-	DeletedAt string     `json:"deleted_at"`
+	ViewCount int
+	Status    PostStatus
+	CreatedAt string
+	UpdatedAt string
+	DeletedAt string
 }
 
 func PostFrom(post *models.CreatePostRequest) *Post {
@@ -36,7 +35,6 @@ func PostFrom(post *models.CreatePostRequest) *Post {
 		UserID:   strconv.FormatInt(post.UserID, 10),
 		ThreadID: post.Thread,
 		Title:    post.Title,
-		Content:  post.Content,
 
 		ViewCount: 0,
 		Status:    StatusPublished,
@@ -51,13 +49,13 @@ func getValidTime() time.Time {
 }
 
 type Thread struct {
-	ThreadID string   `json:"id"`
-	Name     string   `json:"name"`
-	Tags     []string `json:"tags"`
+	ThreadID string
+	Name     string
+	Tags     []string
 
-	CreatedAt string `json:"created_at"`
-	UpdatedAt string `json:"updated_at"`
-	DeletedAt string `json:"deleted_at"`
+	CreatedAt string
+	UpdatedAt string
+	DeletedAt string
 }
 
 func ThreadFrom(thread *models.CreateThreadRequest) *Thread {

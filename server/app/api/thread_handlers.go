@@ -6,9 +6,9 @@ import (
 	"github.com/go-chi/render"
 	"io"
 	"log/slog"
-	"ndb/app/models"
-	apierr "ndb/errors"
-	"ndb/services/posts"
+	"ndb/server/app/models"
+	apierr "ndb/server/errors"
+	"ndb/server/services/posts"
 	"net/http"
 )
 

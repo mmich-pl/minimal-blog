@@ -8,11 +8,11 @@ import (
 	"github.com/gocql/gocql"
 	"github.com/jonboulle/clockwork"
 
-	"ndb/app/api"
-	"ndb/config"
-	_ "ndb/docs"
-	"ndb/logging"
-	logrepo "ndb/repositories/log"
+	"ndb/server/app/api"
+	"ndb/server/config"
+	_ "ndb/server/docs"
+	"ndb/server/logging"
+	logrepo "ndb/server/repositories/log"
 )
 
 func main() {

@@ -6,8 +6,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/neo4j/neo4j-go-driver/v5/neo4j"
 	"log/slog"
-	"ndb/config"
-	"ndb/repositories/posts/model"
+	"ndb/server/config"
+	"ndb/server/repositories/posts/model"
 )
 
 type Store struct {
@@ -212,8 +212,7 @@ func (s *Store) CreatePost(ctx context.Context, post *model.Post, threadID strin
 				postID: $id,
                 userID: $userID,
                 title: $title,
-                content: $content,
-                imageName: $imageName,
+                contentFile: $contentFile,
                 viewCount: $viewCount,
                 status: $status,
                 createdAt: $createdAt,
@@ -226,16 +225,15 @@ func (s *Store) CreatePost(ctx context.Context, post *model.Post, threadID strin
 			ctx,
 			query,
 			map[string]any{
-				"id":        uuid.New().String(),
-				"userID":    post.UserID,
-				"title":     post.Title,
-				"content":   post.Content,
-				"imageName": post.ImageName,
-				"viewCount": post.ViewCount,
-				"status":    post.Status,
-				"createdAt": post.CreatedAt,
-				"updatedAt": post.UpdatedAt,
-				"thread":    threadID,
+				"id":          uuid.New().String(),
+				"userID":      post.UserID,
+				"title":       post.Title,
+				"contentFile": post.ContentFile,
+				"viewCount":   post.ViewCount,
+				"status":      post.Status,
+				"createdAt":   post.CreatedAt,
+				"updatedAt":   post.UpdatedAt,
+				"thread":      threadID,
 			},
 		)
 		if err != nil {
@@ -289,7 +287,8 @@ func (s *Store) GetPost(ctx context.Context, postID string) (*model.Post, error)
 			return nil, err
 		}
 
-		return mapToPost(record), nil
+		node := record.Values[0].(neo4j.Node)
+		return mapToPost(&node), nil
 	})
 
 	if err != nil {
@@ -317,8 +316,8 @@ func (s *Store) GetPostsInThread(ctx context.Context, threadID string) ([]*model
 
 		var posts []*model.Post
 		for res.Next(ctx) {
-			record := res.Record()
-			posts = append(posts, mapToPost(record))
+			node := res.Record().Values[0].(neo4j.Node)
+			posts = append(posts, mapToPost(&node))
 		}
 
 		return posts, nil
@@ -330,19 +329,69 @@ func (s *Store) GetPostsInThread(ctx context.Context, threadID string) ([]*model
 	return result.([]*model.Post), nil
 }
 
-func mapToPost(record *neo4j.Record) *model.Post {
-	fmt.Printf("%+v\n", record)
-	node := record.Values[0].(neo4j.Node)
+func (s *Store) GetPostsWithLimit(ctx context.Context, limit int) (map[string][]*model.Post, error) {
+	session := s.conn.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeRead})
+	defer session.Close(ctx)
+
+	result, err := session.ExecuteRead(ctx, func(tx neo4j.ManagedTransaction) (interface{}, error) {
+		query := `
+           MATCH (t:Thread)
+OPTIONAL MATCH (t)-[:HAS_TAG]->(tag:Tag)
+WITH t, collect(tag.name) AS tags
+OPTIONAL MATCH (p:Post)-[:BELONGS_TO]->(t)
+  WHERE p.status = 'published'
+RETURN t.name AS thread_name, t.threadID, tags, collect(p)[..$limit] AS posts`
+
+		res, err := tx.Run(ctx, query, map[string]interface{}{
+			"limit": limit,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		var posts = make(map[string][]*model.Post) // Initialize the map
+		for res.Next(ctx) {
+			record := res.Record()
+
+			// Get the key for the posts map (from the first value in the record)
+			key := record.Values[0].(string)
+
+			// Iterate over the posts in the 6th column (index 5)
+			for _, post := range record.Values[3].([]interface{}) {
+				p := post.(neo4j.Node)
+				mapped := mapToPost(&p)
+				mapped.ThreadID = record.Values[1].(string)
+
+				// Check if the key already exists in the map
+				if _, exists := posts[key]; !exists {
+					// If not, initialize an empty array for this key
+					posts[key] = []*model.Post{}
+				}
+
+				// Append the mapped post to the array
+				posts[key] = append(posts[key], mapped)
+			}
+		}
+
+		return posts, nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+	return result.(map[string][]*model.Post), nil
+}
+
+func mapToPost(node *neo4j.Node) *model.Post {
 	post := model.Post{
-		PostID:    node.Props["postID"].(string),
-		UserID:    node.Props["userID"].(string),
-		Title:     node.Props["title"].(string),
-		Content:   node.Props["content"].(string),
-		ImageName: node.Props["imageName"].(string),
-		ViewCount: int(node.Props["viewCount"].(int64)),
-		Status:    model.PostStatus(node.Props["status"].(string)),
-		CreatedAt: node.Props["createdAt"].(string),
-		UpdatedAt: node.Props["updatedAt"].(string),
+		PostID:      node.Props["postID"].(string),
+		UserID:      node.Props["userID"].(string),
+		Title:       node.Props["title"].(string),
+		ContentFile: node.Props["contentFile"].(string),
+		ViewCount:   int(node.Props["viewCount"].(int64)),
+		Status:      model.PostStatus(node.Props["status"].(string)),
+		CreatedAt:   node.Props["createdAt"].(string),
+		UpdatedAt:   node.Props["updatedAt"].(string),
 	}
 	return &post
 }

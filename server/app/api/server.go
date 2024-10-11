@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"ndb/server/services/posts"
 	"net/http"
 	"os"
 	"os/signal"
@@ -15,10 +16,9 @@ import (
 	"github.com/go-chi/render"
 	slogchi "github.com/samber/slog-chi"
 	httpSwagger "github.com/swaggo/http-swagger"
-	s3client "ndb/clients/aws"
-	"ndb/config"
-	poststore "ndb/repositories/posts"
-	"ndb/services/posts"
+	s3client "ndb/server/clients/aws"
+	"ndb/server/config"
+	poststore "ndb/server/repositories/posts"
 )
 
 type Server struct {
@@ -116,7 +116,9 @@ func (s *Server) routes() {
 
 	s.router.Get("/health", s.handleGetHealth)
 	s.router.Post("/api/v1/posts", s.CreatePostHandler)
-	s.router.Get("/api/v1/posts/{id}", s.GetPostHandler)
+	s.router.Get("/api/v1/posts/{id}/metadata", s.GetPostMetadataHandler)
+	s.router.Get("/api/v1/posts/{id}/markdown", s.GetPostMarkdownHandler)
+	s.router.Get("/api/v1/posts/{limit}", s.GetPostLimitHandler)
 
 	s.router.Get("/api/v1/tags", s.ListTagsHandler)
 

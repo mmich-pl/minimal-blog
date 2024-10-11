@@ -22,9 +22,7 @@ definitions:
     type: object
   models.Post:
     properties:
-      content:
-        type: string
-      imageName:
+      contentFle:
         type: string
       post_id:
         type: string
@@ -67,30 +65,25 @@ paths:
     post:
       consumes:
       - multipart/form-data
-      description: This endpoint allows users to create a new posts by submitting
-        text data (title, content, thread, user_id) and an image file.
+      description: This endpoint allows users to create a new post by submitting text
+        data (title, content, thread, user_id) and a markdown file (.md).
       parameters:
-      - description: Image File
+      - description: Markdown File
         in: formData
-        name: image
+        name: markdown
         required: true
         type: file
-      - description: Title of the posts
+      - description: Title of the post
         in: formData
         name: title
         required: true
         type: string
-      - description: Content of the posts
-        in: formData
-        name: content
-        required: true
-        type: string
-      - description: ID of the thread to which the posts belongs
+      - description: ID of the thread to which the post belongs
         in: formData
         name: thread
         required: true
         type: string
-      - description: ID of the user creating the posts
+      - description: ID of the user creating the post
         in: formData
         name: user_id
         required: true
@@ -110,16 +103,41 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/errors.ErrResponse'
-      summary: Create a new posts with an image
+      summary: Create a new post with a markdown file
       tags:
       - posts
-  /api/v1/posts/{id}:
+  /api/v1/posts/{id}/markdown:
+    get:
+      description: Fetch the markdown file associated with a post from S3.
+      parameters:
+      - description: Content File ID
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - text/markdown
+      responses:
+        "200":
+          description: Markdown file
+          schema:
+            type: file
+        "400":
+          description: Invalid request or post not found
+          schema:
+            $ref: '#/definitions/errors.ErrResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/errors.ErrResponse'
+      summary: Retrieve post markdown file
+      tags:
+      - posts
+  /api/v1/posts/{id}/metadata:
     get:
       consumes:
       - application/json
-      description: Fetch post details from Neo4j along with an image file stored in
-        S3. The response contains post details in JSON format followed by the image
-        file.
+      description: Fetch post details from Neo4j in JSON format.
       parameters:
       - description: Post ID
         in: query
@@ -127,16 +145,45 @@ paths:
         required: true
         type: string
       produces:
-      - multipart/mixed
+      - application/json
       responses:
         "200":
-          description: Post details with image
-          headers:
-            Content-Type:
-              description: multipart/mixed; boundary=--imageboundary
-              type: string
+          description: Post metadata
           schema:
             $ref: '#/definitions/models.Post'
+        "400":
+          description: Invalid request or post not found
+          schema:
+            $ref: '#/definitions/errors.ErrResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/errors.ErrResponse'
+      summary: Retrieve post metadata
+      tags:
+      - posts
+  /api/v1/posts/{limit}:
+    get:
+      consumes:
+      - application/json
+      description: Fetch post details from Neo4j along with an image file stored in
+        S3. The response contains post details in JSON format followed by the image
+        file.
+      parameters:
+      - description: limit
+        in: query
+        name: limit
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Posts
+          schema:
+            items:
+              $ref: '#/definitions/models.Post'
+            type: array
         "400":
           description: Invalid request or post not found
           schema:

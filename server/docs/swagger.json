@@ -6,7 +6,7 @@
     "paths": {
         "/api/v1/posts": {
             "post": {
-                "description": "This endpoint allows users to create a new posts by submitting text data (title, content, thread, user_id) and an image file.",
+                "description": "This endpoint allows users to create a new post by submitting text data (title, content, thread, user_id) and a markdown file (.md).",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -16,39 +16,32 @@
                 "tags": [
                     "posts"
                 ],
-                "summary": "Create a new posts with an image",
+                "summary": "Create a new post with a markdown file",
                 "parameters": [
                     {
                         "type": "file",
-                        "description": "Image File",
-                        "name": "image",
+                        "description": "Markdown File",
+                        "name": "markdown",
                         "in": "formData",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "Title of the posts",
+                        "description": "Title of the post",
                         "name": "title",
                         "in": "formData",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "Content of the posts",
-                        "name": "content",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "ID of the thread to which the posts belongs",
+                        "description": "ID of the thread to which the post belongs",
                         "name": "thread",
                         "in": "formData",
                         "required": true
                     },
                     {
                         "type": "integer",
-                        "description": "ID of the user creating the posts",
+                        "description": "ID of the user creating the post",
                         "name": "user_id",
                         "in": "formData",
                         "required": true
@@ -76,19 +69,60 @@
                 }
             }
         },
-        "/api/v1/posts/{id}": {
+        "/api/v1/posts/{id}/markdown": {
             "get": {
-                "description": "Fetch post details from Neo4j along with an image file stored in S3. The response contains post details in JSON format followed by the image file.",
-                "consumes": [
-                    "application/json"
-                ],
+                "description": "Fetch the markdown file associated with a post from S3.",
                 "produces": [
-                    "multipart/mixed"
+                    "text/markdown"
                 ],
                 "tags": [
                     "posts"
                 ],
-                "summary": "Retrieve post data along with the associated image",
+                "summary": "Retrieve post markdown file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Content File ID",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Markdown file",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request or post not found",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/posts/{id}/metadata": {
+            "get": {
+                "description": "Fetch post details from Neo4j in JSON format.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "posts"
+                ],
+                "summary": "Retrieve post metadata",
                 "parameters": [
                     {
                         "type": "string",
@@ -100,14 +134,55 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Post details with image",
+                        "description": "Post metadata",
                         "schema": {
                             "$ref": "#/definitions/models.Post"
-                        },
-                        "headers": {
-                            "Content-Type": {
-                                "type": "string",
-                                "description": "multipart/mixed; boundary=--imageboundary"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request or post not found",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/posts/{limit}": {
+            "get": {
+                "description": "Fetch post details from Neo4j along with an image file stored in S3. The response contains post details in JSON format followed by the image file.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "posts"
+                ],
+                "summary": "Retrieve post data along with the associated image",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Posts",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Post"
                             }
                         }
                     },
@@ -276,10 +351,7 @@
         "models.Post": {
             "type": "object",
             "properties": {
-                "content": {
-                    "type": "string"
-                },
-                "imageName": {
+                "contentFle": {
                     "type": "string"
                 },
                 "post_id": {

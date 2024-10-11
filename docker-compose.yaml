@@ -27,21 +27,6 @@ services:
     networks:
       - app-network
 
-  mongo:
-    image: mongo:latest
-    container_name: mongo
-    ports:
-      - "27017:27017"
-    volumes:
-      - mongo-data:/data/db
-      - ./scripts/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
-    environment:
-      - MONGO_INITDB_ROOT_USERNAME=root
-      - MONGO_INITDB_ROOT_PASSWORD=Secret1!
-      - MONGO_INITDB_DATABASE=posts-storage
-    networks:
-      - app-network
-
   neo4j:
     image: neo4j:latest
     container_name: neo4j-db
@@ -66,6 +51,8 @@ services:
       - MINIO_DEFAULT_BUCKETS=posts-storage
     networks:
       - app-network
+    volumes:
+      - minio-data:/data
 
 volumes:
   scylla-data:
