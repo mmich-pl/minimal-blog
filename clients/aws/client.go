@@ -3,7 +3,11 @@ package s3client
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
+	"github.com/aws/aws-sdk-go/aws/awserr"
+	s4 "github.com/aws/aws-sdk-go/service/s3"
 	"image"
 	"image/jpeg"
 	"io"
@@ -12,11 +16,9 @@ import (
 	"time"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
-	v4 "github.com/aws/aws-sdk-go-v2/aws/signer/v4"
 	awsconfig "github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
-
 	"ndb/config"
 )
 
@@ -59,6 +61,11 @@ func New(
 }
 
 func (s *Client) UploadPresignURL(ctx context.Context, key string) (*v4.PresignedHTTPRequest, error) {
+	err := s.checkIdObjectExists(ctx, key)
+	if err != nil {
+		return nil, err
+	}
+
 	presignedUrl, err := s.presignClient.PresignPutObject(
 		ctx,
 		&s3.PutObjectInput{
@@ -86,13 +93,61 @@ func (s *Client) UploadPresignURL(ctx context.Context, key string) (*v4.Presigne
 	return presignedUrl, nil
 }
 
+func (s *Client) checkIdObjectExists(ctx context.Context, key string) error {
+	_, err := s.baseClient.GetObject(ctx, &s3.GetObjectInput{
+		Bucket: aws.String(s.bucket),
+		Key:    aws.String(key),
+	})
+
+	if err != nil {
+		var aerr awserr.Error
+		if errors.As(err, &aerr) {
+			switch aerr.Code() {
+			case s4.ErrCodeNoSuchKey:
+				_, err = s.baseClient.PutObject(ctx, &s3.PutObjectInput{
+					Bucket: aws.String(s.bucket),
+					Key:    aws.String(key),
+					Body:   io.Reader(bytes.NewBuffer(nil)),
+				})
+				if err != nil {
+					s.log.ErrorContext(
+						ctx,
+						"couldn't upload new empty file",
+						slog.Any("bucket", s.bucket),
+						slog.Any("key", key),
+						slog.Any("error", err),
+					)
+					return err
+				}
+			default:
+				s.log.ErrorContext(
+					ctx,
+					"couldn't get object",
+					slog.Any("bucket", s.bucket),
+					slog.Any("key", key),
+					slog.Any("error", err),
+				)
+				return err
+
+			}
+		}
+	}
+	return nil
+}
+
 func (s *Client) UploadFile(ctx context.Context, file image.Image, url string) error {
 	var buf bytes.Buffer
 	err := jpeg.Encode(&buf, file, nil)
 	if err != nil {
 		return nil
 	}
+
+	if buf.Len() == 0 {
+		return errors.New("tried to upload empty image")
+	}
+
 	body := io.Reader(&buf)
+	fmt.Println(url)
 	request, err := http.NewRequestWithContext(ctx, http.MethodPut, url, body)
 	if err != nil {
 		return err
@@ -107,5 +162,25 @@ func (s *Client) UploadFile(ctx context.Context, file image.Image, url string) e
 		return err
 	}
 	defer resp.Body.Close()
-	return err
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Errorf("expected 200 OK, got %d", resp.StatusCode)
+	}
+
+	return nil
+}
+
+func (s *Client) Get(ctx context.Context, key string) (io.ReadCloser, error) {
+	output, err := s.baseClient.GetObject(ctx,
+		&s3.GetObjectInput{
+			Bucket: aws.String(s.bucket),
+			Key:    aws.String(key),
+		},
+	)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return output.Body, nil
 }

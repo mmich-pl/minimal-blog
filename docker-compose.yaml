@@ -63,7 +63,7 @@ services:
     environment:
       - MINIO_ROOT_USER=root
       - MINIO_ROOT_PASSWORD=Secret1!
-      - MINIO_DEFAULT_BUCKETS=post-storage
+      - MINIO_DEFAULT_BUCKETS=posts-storage
     networks:
       - app-network
 

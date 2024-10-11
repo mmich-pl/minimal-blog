@@ -23,9 +23,9 @@ type Config struct {
 }
 
 type S3 struct {
-	Secret string `env:"SECRET" envDefault:"root"`
-	Key    string `env:"KEY" envDefault:"Secret1!"`
-	Bucket string `env:"BUCKET" envDefault:"post-storage"`
+	Key    string `env:"KEY" envDefault:"root"`
+	Secret string `env:"SECRET" envDefault:"Secret1!"`
+	Bucket string `env:"BUCKET" envDefault:"posts-storage"`
 	Region string `env:"REGION" envDefault:"us-east-1"`
 
 	Port    int    `env:"PORT" envDefault:"9000"`
