@@ -6,7 +6,7 @@
     "paths": {
         "/api/v1/posts": {
             "post": {
-                "description": "This endpoint allows users to create a new post by submitting text data (title, content, thread_id, user_id) and an image file.",
+                "description": "This endpoint allows users to create a new posts by submitting text data (title, content, thread, user_id) and an image file.",
                 "consumes": [
                     "multipart/form-data"
                 ],
@@ -16,7 +16,7 @@
                 "tags": [
                     "posts"
                 ],
-                "summary": "Create a new post with an image",
+                "summary": "Create a new posts with an image",
                 "parameters": [
                     {
                         "type": "file",
@@ -27,28 +27,28 @@
                     },
                     {
                         "type": "string",
-                        "description": "Title of the post",
+                        "description": "Title of the posts",
                         "name": "title",
                         "in": "formData",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "Content of the post",
+                        "description": "Content of the posts",
                         "name": "content",
                         "in": "formData",
                         "required": true
                     },
                     {
                         "type": "string",
-                        "description": "ID of the thread to which the post belongs",
+                        "description": "ID of the thread to which the posts belongs",
                         "name": "thread",
                         "in": "formData",
                         "required": true
                     },
                     {
                         "type": "integer",
-                        "description": "ID of the user creating the post",
+                        "description": "ID of the user creating the posts",
                         "name": "user_id",
                         "in": "formData",
                         "required": true
@@ -58,7 +58,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/api.PostResponse"
+                            "$ref": "#/definitions/models.PostCreationResponse"
                         }
                     },
                     "400": {
@@ -75,20 +75,173 @@
                     }
                 }
             }
-        }
-    },
-    "definitions": {
-        "api.PostResponse": {
-            "type": "object",
-            "properties": {
-                "post_id": {
-                    "type": "string"
-                },
-                "status": {
-                    "type": "integer"
+        },
+        "/api/v1/posts/{id}": {
+            "get": {
+                "description": "Fetch post details from Neo4j along with an image file stored in S3. The response contains post details in JSON format followed by the image file.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "multipart/mixed"
+                ],
+                "tags": [
+                    "posts"
+                ],
+                "summary": "Retrieve post data along with the associated image",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Post ID",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Post details with image",
+                        "schema": {
+                            "$ref": "#/definitions/models.Post"
+                        },
+                        "headers": {
+                            "Content-Type": {
+                                "type": "string",
+                                "description": "multipart/mixed; boundary=--imageboundary"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request or post not found",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrResponse"
+                        }
+                    }
                 }
             }
         },
+        "/api/v1/tags": {
+            "get": {
+                "description": "Fetches a list of all available tags",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "tags"
+                ],
+                "summary": "List all tags",
+                "responses": {
+                    "200": {
+                        "description": "List of tags",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/threads": {
+            "get": {
+                "description": "Fetches a list of all available threads",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "threads"
+                ],
+                "summary": "List all threads",
+                "responses": {
+                    "200": {
+                        "description": "List of threads",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Thread"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not found error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a new thread based on the provided request data",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "threads"
+                ],
+                "summary": "Create a new thread",
+                "parameters": [
+                    {
+                        "description": "Thread creation request",
+                        "name": "data",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/models.CreateThreadRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/models.ThreadCreationResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
         "errors.ErrResponse": {
             "type": "object",
             "properties": {
@@ -103,6 +256,82 @@
                 "status-code": {
                     "description": "http response status code",
                     "type": "integer"
+                }
+            }
+        },
+        "models.CreateThreadRequest": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "models.Post": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "imageName": {
+                    "type": "string"
+                },
+                "post_id": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "view_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.PostCreationResponse": {
+            "type": "object",
+            "properties": {
+                "post_id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "integer"
+                }
+            }
+        },
+        "models.Thread": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "thread_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "models.ThreadCreationResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "integer"
+                },
+                "thread_id": {
+                    "type": "string"
                 }
             }
         }

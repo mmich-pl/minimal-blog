@@ -1,11 +1,4 @@
 definitions:
-  api.PostResponse:
-    properties:
-      post_id:
-        type: string
-      status:
-        type: integer
-    type: object
   errors.ErrResponse:
     properties:
       error:
@@ -18,6 +11,55 @@ definitions:
         description: http response status code
         type: integer
     type: object
+  models.CreateThreadRequest:
+    properties:
+      name:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+    type: object
+  models.Post:
+    properties:
+      content:
+        type: string
+      imageName:
+        type: string
+      post_id:
+        type: string
+      title:
+        type: string
+      user_id:
+        type: string
+      view_count:
+        type: integer
+    type: object
+  models.PostCreationResponse:
+    properties:
+      post_id:
+        type: string
+      status:
+        type: integer
+    type: object
+  models.Thread:
+    properties:
+      name:
+        type: string
+      tags:
+        items:
+          type: string
+        type: array
+      thread_id:
+        type: string
+    type: object
+  models.ThreadCreationResponse:
+    properties:
+      status:
+        type: integer
+      thread_id:
+        type: string
+    type: object
 info:
   contact: {}
 paths:
@@ -25,30 +67,30 @@ paths:
     post:
       consumes:
       - multipart/form-data
-      description: This endpoint allows users to create a new post by submitting text
-        data (title, content, thread_id, user_id) and an image file.
+      description: This endpoint allows users to create a new posts by submitting
+        text data (title, content, thread, user_id) and an image file.
       parameters:
       - description: Image File
         in: formData
         name: image
         required: true
         type: file
-      - description: Title of the post
+      - description: Title of the posts
         in: formData
         name: title
         required: true
         type: string
-      - description: Content of the post
+      - description: Content of the posts
         in: formData
         name: content
         required: true
         type: string
-      - description: ID of the thread to which the post belongs
+      - description: ID of the thread to which the posts belongs
         in: formData
         name: thread
         required: true
         type: string
-      - description: ID of the user creating the post
+      - description: ID of the user creating the posts
         in: formData
         name: user_id
         required: true
@@ -59,7 +101,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/api.PostResponse'
+            $ref: '#/definitions/models.PostCreationResponse'
         "400":
           description: Bad Request
           schema:
@@ -68,7 +110,117 @@ paths:
           description: Internal Server Error
           schema:
             $ref: '#/definitions/errors.ErrResponse'
-      summary: Create a new post with an image
+      summary: Create a new posts with an image
       tags:
       - posts
+  /api/v1/posts/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Fetch post details from Neo4j along with an image file stored in
+        S3. The response contains post details in JSON format followed by the image
+        file.
+      parameters:
+      - description: Post ID
+        in: query
+        name: id
+        required: true
+        type: string
+      produces:
+      - multipart/mixed
+      responses:
+        "200":
+          description: Post details with image
+          headers:
+            Content-Type:
+              description: multipart/mixed; boundary=--imageboundary
+              type: string
+          schema:
+            $ref: '#/definitions/models.Post'
+        "400":
+          description: Invalid request or post not found
+          schema:
+            $ref: '#/definitions/errors.ErrResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/errors.ErrResponse'
+      summary: Retrieve post data along with the associated image
+      tags:
+      - posts
+  /api/v1/tags:
+    get:
+      description: Fetches a list of all available tags
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of tags
+          schema:
+            items:
+              type: string
+            type: array
+        "404":
+          description: Not found error
+          schema:
+            $ref: '#/definitions/errors.ErrResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/errors.ErrResponse'
+      summary: List all tags
+      tags:
+      - tags
+  /api/v1/threads:
+    get:
+      description: Fetches a list of all available threads
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of threads
+          schema:
+            items:
+              $ref: '#/definitions/models.Thread'
+            type: array
+        "404":
+          description: Not found error
+          schema:
+            $ref: '#/definitions/errors.ErrResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/errors.ErrResponse'
+      summary: List all threads
+      tags:
+      - threads
+    post:
+      consumes:
+      - application/json
+      description: Create a new thread based on the provided request data
+      parameters:
+      - description: Thread creation request
+        in: body
+        name: data
+        required: true
+        schema:
+          $ref: '#/definitions/models.CreateThreadRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/models.ThreadCreationResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/errors.ErrResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/errors.ErrResponse'
+      summary: Create a new thread
+      tags:
+      - threads
 swagger: "2.0"
