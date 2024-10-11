@@ -15,11 +15,10 @@ import (
 	"github.com/go-chi/render"
 	slogchi "github.com/samber/slog-chi"
 	httpSwagger "github.com/swaggo/http-swagger"
-
 	s3client "ndb/clients/aws"
 	"ndb/config"
-	"ndb/repositories/posts"
-	"ndb/services/post"
+	poststore "ndb/repositories/posts"
+	"ndb/services/posts"
 )
 
 type Server struct {
@@ -27,7 +26,7 @@ type Server struct {
 	log    *slog.Logger
 	router *chi.Mux
 
-	uploadService *post.Service
+	postService *posts.Service
 }
 
 func NewServer(ctx context.Context, logger *slog.Logger, cfg *config.Config) (*Server, error) {
@@ -36,16 +35,16 @@ func NewServer(ctx context.Context, logger *slog.Logger, cfg *config.Config) (*S
 		return nil, err
 	}
 
-	mongo, err := posts.NewStore(ctx, logger, &cfg.Neo4j)
+	mongo, err := poststore.NewStore(ctx, logger, &cfg.Neo4j)
 	if err != nil {
 		return nil, err
 	}
 
 	srv := &Server{
-		HTTPServer:    &cfg.HTTPServer,
-		log:           logger,
-		router:        chi.NewRouter(),
-		uploadService: post.NewService(s3Client, mongo, logger),
+		HTTPServer:  &cfg.HTTPServer,
+		log:         logger,
+		router:      chi.NewRouter(),
+		postService: posts.NewService(s3Client, mongo, logger),
 	}
 
 	srv.router.Use(slogchi.NewWithConfig(logger, slogchi.Config{
@@ -116,8 +115,11 @@ func (s *Server) routes() {
 	))
 
 	s.router.Get("/health", s.handleGetHealth)
+	s.router.Post("/api/v1/posts", s.CreatePostHandler)
+	s.router.Get("/api/v1/posts/{id}", s.GetPostHandler)
 
-	s.router.Route("/api/v1/posts", func(r chi.Router) {
-		r.Post("/", s.CreatePost)
-	})
+	s.router.Get("/api/v1/tags", s.ListTagsHandler)
+
+	s.router.Post("/api/v1/threads", s.CreateThreadHandler)
+	s.router.Get("/api/v1/threads", s.ListThreadsHandler)
 }

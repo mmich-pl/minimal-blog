@@ -1,9 +1,9 @@
 package model
 
 import (
+	"strconv"
 	"time"
 
-	"github.com/google/uuid"
 	"ndb/app/models"
 )
 
@@ -16,13 +16,15 @@ const (
 )
 
 type Post struct {
-	UserID    string `json:"user_id"`
-	Title     string `json:"title"`
-	Content   string `json:"content"`
+	PostID   string `json:"post_id"`
+	UserID   string `json:"user_id"`
+	ThreadID string `json:"thread_id"`
+	Title    string `json:"title"`
+	Content  string `json:"content"`
+
 	ImageName string `json:"image_name"`
 
-	ViewCount int `json:"view_count"`
-
+	ViewCount int        `json:"view_count"`
 	Status    PostStatus `json:"status"`
 	CreatedAt string     `json:"created_at"`
 	UpdatedAt string     `json:"updated_at"`
@@ -31,9 +33,10 @@ type Post struct {
 
 func PostFrom(post *models.CreatePostRequest) *Post {
 	return &Post{
-		UserID:  uuid.New().String(),
-		Title:   post.Title,
-		Content: post.Content,
+		UserID:   strconv.FormatInt(post.UserID, 10),
+		ThreadID: post.Thread,
+		Title:    post.Title,
+		Content:  post.Content,
 
 		ViewCount: 0,
 		Status:    StatusPublished,
@@ -48,8 +51,9 @@ func getValidTime() time.Time {
 }
 
 type Thread struct {
-	Name string   `json:"name"`
-	Tags []string `json:"tags"`
+	ThreadID string   `json:"id"`
+	Name     string   `json:"name"`
+	Tags     []string `json:"tags"`
 
 	CreatedAt string `json:"created_at"`
 	UpdatedAt string `json:"updated_at"`
