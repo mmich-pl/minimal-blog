@@ -98,9 +98,9 @@ func (s *Client) checkIdObjectExists(ctx context.Context, key string) error {
 	})
 
 	if err != nil {
-		var aerr awserr.Error
-		if errors.As(err, &aerr) {
-			switch aerr.Code() {
+		var awsErr awserr.Error
+		if errors.As(err, &awsErr) {
+			switch awsErr.Code() {
 			case s4.ErrCodeNoSuchKey:
 				_, err = s.baseClient.PutObject(ctx, &s3.PutObjectInput{
 					Bucket: aws.String(s.bucket),
@@ -153,6 +153,11 @@ func (s *Client) UploadFile(ctx context.Context, reader io.Reader, url string) e
 		return fmt.Errorf("expected 200 OK, got %d", resp.StatusCode)
 	}
 
+	s.log.InfoContext(
+		ctx,
+		"Successfully uploaded file",
+		slog.Any("url", url),
+	)
 	return nil
 }
 
@@ -168,5 +173,11 @@ func (s *Client) Get(ctx context.Context, key string) (io.ReadCloser, error) {
 		return nil, err
 	}
 
+	s.log.InfoContext(
+		ctx,
+		"Successfully retrieved object",
+		slog.Any("key", key),
+		slog.Any("bucket", s.bucket),
+	)
 	return output.Body, nil
 }

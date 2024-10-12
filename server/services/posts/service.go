@@ -1,7 +1,6 @@
 package posts
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -11,24 +10,35 @@ import (
 	"mime/multipart"
 
 	apimodel "ndb/server/app/models"
-	awsS3 "ndb/server/clients/aws"
 	"ndb/server/repositories/posts"
 	"ndb/server/repositories/posts/model"
 )
 
 var ErrNotFound = errors.New("not found")
 
-type Service struct {
-	s3Client *awsS3.Client
-	store    *posts.Store
-	log      *slog.Logger
+type FileService interface {
+	InsertFile(
+		ctx context.Context,
+		fileName string,
+		file []byte,
+	) error
+	GetFile(
+		ctx context.Context,
+		fileName string,
+	) (io.ReadCloser, error)
 }
 
-func NewService(s3Client *awsS3.Client, store *posts.Store, log *slog.Logger) *Service {
+type Service struct {
+	store       *posts.Store
+	log         *slog.Logger
+	fileManager FileService
+}
+
+func NewService(fileManager FileService, store *posts.Store, log *slog.Logger) *Service {
 	return &Service{
-		s3Client: s3Client,
-		store:    store,
-		log:      log,
+		fileManager: fileManager,
+		store:       store,
+		log:         log,
 	}
 }
 
@@ -73,18 +83,11 @@ func (s *Service) CreatePost(ctx context.Context, file multipart.File, data *api
 		return "", errors.New("tried to upload empty image")
 	}
 
-	// Combine the header with the file content
 	contentWithHeader := append([]byte(header), contentBytes...)
 
-	// Generate a presigned URL for the markdown file
-	presignedUrl, err := s.s3Client.UploadPresignURL(ctx, post.ContentFile)
+	err = s.fileManager.InsertFile(ctx, post.ContentFile, contentWithHeader)
 	if err != nil {
-		return "", err
-	}
-
-	// Upload the markdown file with the header to S3
-	err = s.s3Client.UploadFile(ctx, bytes.NewReader(contentWithHeader), presignedUrl.URL)
-	if err != nil {
+		s.log.ErrorContext(ctx, "Error inserting file", slog.Any("error", err))
 		return "", err
 	}
 
@@ -115,18 +118,7 @@ func (s *Service) GetPostMetadata(ctx context.Context, postID string) (*apimodel
 }
 
 func (s *Service) GetPostMarkdown(ctx context.Context, contentFile string) (io.ReadCloser, error) {
-	readCloser, err := s.s3Client.Get(ctx, contentFile)
-	if err != nil {
-		s.log.ErrorContext(
-			ctx,
-			"Could not retrieve file",
-			slog.Any("error", err),
-			slog.Any("image_name", contentFile),
-		)
-		return nil, err
-	}
-
-	return readCloser, nil
+	return s.fileManager.GetFile(ctx, contentFile)
 }
 
 func (s *Service) GetPostsWithLimit(ctx context.Context, limit int) (map[string][]*apimodel.Post, error) {

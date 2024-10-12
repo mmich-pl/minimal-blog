@@ -20,6 +20,12 @@ type Config struct {
 	Scylla     Scylla
 	HTTPServer HTTPServer
 	Neo4j      Neo4j `envPrefix:"NEO4J_"`
+	Redis      Redis `envPrefix:"REDIS_"`
+}
+
+type Redis struct {
+	Address string        `json:"address" env:"ADDRESS" envDefault:"localhost:6379"`
+	TTL     time.Duration `json:"timeout" env:"TTL" envDefault:"5m"`
 }
 
 type S3 struct {

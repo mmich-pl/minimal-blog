@@ -8,6 +8,7 @@ import (
 	"log/slog"
 	"ndb/server/config"
 	"ndb/server/repositories/posts/model"
+	"strconv"
 )
 
 type Store struct {
@@ -385,7 +386,7 @@ RETURN t.name AS thread_name, t.threadID, tags, collect(p)[..$limit] AS posts`
 func mapToPost(node *neo4j.Node) *model.Post {
 	post := model.Post{
 		PostID:      node.Props["postID"].(string),
-		UserID:      node.Props["userID"].(string),
+		UserID:      strconv.FormatInt(node.Props["userID"].(int64), 10),
 		Title:       node.Props["title"].(string),
 		ContentFile: node.Props["contentFile"].(string),
 		ViewCount:   int(node.Props["viewCount"].(int64)),

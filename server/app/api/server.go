@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"ndb/server/services/file"
 	"ndb/server/services/posts"
 	"net/http"
 	"os"
@@ -29,22 +30,28 @@ type Server struct {
 	postService *posts.Service
 }
 
-func NewServer(ctx context.Context, logger *slog.Logger, cfg *config.Config) (*Server, error) {
+func NewServer(
+	ctx context.Context,
+	logger *slog.Logger,
+	cfg *config.Config,
+) (*Server, error) {
 	s3Client, err := s3client.New(ctx, logger, &cfg.S3)
 	if err != nil {
 		return nil, err
 	}
 
-	mongo, err := poststore.NewStore(ctx, logger, &cfg.Neo4j)
+	postStore, err := poststore.NewStore(ctx, logger, &cfg.Neo4j)
 	if err != nil {
 		return nil, err
 	}
+
+	cachedFileService := file.NewCachedService(s3Client, &cfg.Redis, logger)
 
 	srv := &Server{
 		HTTPServer:  &cfg.HTTPServer,
 		log:         logger,
 		router:      chi.NewRouter(),
-		postService: posts.NewService(s3Client, mongo, logger),
+		postService: posts.NewService(cachedFileService, postStore, logger),
 	}
 
 	srv.router.Use(slogchi.NewWithConfig(logger, slogchi.Config{
