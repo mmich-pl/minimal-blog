@@ -115,19 +115,33 @@ func (c *CachedService) GetFile(ctx context.Context, fileName string) (io.ReadCl
 		if err != nil {
 			return nil, err
 		}
+		defer rc.Close()
 
 		var buf bytes.Buffer
 		reader := io.TeeReader(rc, &buf)
-		err = c.set(ctx, fileName, buf.Bytes())
-		if err != nil {
+
+		if _, err = io.Copy(io.Discard, reader); err != nil {
 			c.log.ErrorContext(
 				ctx,
-				"Failed to copy reader",
+				"Failed to read from reader",
 				slog.Any("err", err))
 			return nil, err
 		}
 
-		return io.NopCloser(reader), nil
+		if len(buf.Bytes()) == 0 {
+			return nil, errors.New("redis cache set: file content length is 0")
+		}
+
+		err = c.set(ctx, fileName, buf.Bytes())
+		if err != nil {
+			c.log.ErrorContext(
+				ctx,
+				"Failed to set cache",
+				slog.Any("err", err))
+			return nil, err
+		}
+
+		return io.NopCloser(bytes.NewReader(buf.Bytes())), nil
 	}
 	if err != nil {
 		c.log.ErrorContext(
