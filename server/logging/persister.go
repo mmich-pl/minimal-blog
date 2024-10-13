@@ -95,7 +95,7 @@ func (p *Persister) Handle(ctx context.Context, record slog.Record) error {
 	})
 
 	// Store the log message in ScyllaDB
-	query := `INSERT INTO logs (timestamp, level, message, attributes) VALUES (?, ?, ?, ?)`
+	query := `INSERT INTO logs (timestamp, log_level, message, attributes) VALUES (?, ?, ?, ?)`
 	p.store.Insert(
 		ctx,
 		query,

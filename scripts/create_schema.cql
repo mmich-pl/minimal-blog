@@ -6,7 +6,7 @@ USE log_storage;
 CREATE TABLE logs
 (
     timestamp  timestamp,
-    level      text,
+    log_level      text,
     message    text,
     attributes map<text, text>,
     PRIMARY KEY (timestamp)

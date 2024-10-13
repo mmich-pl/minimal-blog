@@ -47,8 +47,7 @@ func WithBatchSize(batchSize int) StoreOption {
 // WithInterval sets the interval for batch flushing.
 func WithInterval(interval time.Duration) StoreOption {
 	return func(s *Store) {
-		// Assuming you use interval for batch flush or related timing tasks.
-		// Store it or use it to adjust some internal ticker.
+		s.interval = interval
 	}
 }
 
@@ -73,7 +72,7 @@ func NewStore(ctx context.Context, cfg *ConnConfig, opts ...StoreOption) (*Store
 		flushCh:   make(chan struct{}),
 		clock:     clockwork.NewRealClock(),
 		batchSize: 5,
-		interval:  500 * time.Millisecond,
+		interval:  1 * time.Second,
 	}
 
 	// Apply options

@@ -4,6 +4,7 @@ import (
 	"context"
 	"log/slog"
 	"os"
+	"time"
 
 	"github.com/gocql/gocql"
 	"github.com/jonboulle/clockwork"
@@ -28,6 +29,8 @@ func main() {
 			Keyspace:    "log_storage",
 			Hosts:       []string{"127.0.0.1"},
 		},
+		logrepo.WithBatchSize(10),
+		logrepo.WithInterval(10*time.Second),
 		logrepo.WithClock(clockwork.NewRealClock()),
 		logrepo.WithLogger(defaultLogger),
 	)

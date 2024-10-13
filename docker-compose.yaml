@@ -4,6 +4,8 @@ services:
   scylla:
     image: scylladb/scylla
     container_name: scylla
+    volumes:
+      - scylla-data:/var/lib/scylla
     ports:
       - "9042:9042"
 
@@ -15,7 +17,6 @@ services:
       - ./scripts/create_schema.cql:/scylla_scripts/1.cql
       - ./scripts/init-scylladb.sh:/scylla_scripts/init-scylladb.sh
     entrypoint: [ "bash", "/scylla_scripts/init-scylladb.sh" ]
-
 
   redis:
     image: redis:latest
