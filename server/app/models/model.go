@@ -40,13 +40,13 @@ func (mr *ThreadCreationResponse) Bind(_ *http.Request) error {
 }
 
 type Post struct {
-	PostID     string `json:"post_id"`
-	UserID     string `json:"user_id"`
-	ThreadID   string `json:"thread_id"`
-	Title      string `json:"title"`
-	ContentFle string `json:"content_fle"`
-
-	ViewCount int `json:"view_count"`
+	PostID      string `json:"post_id"`
+	UserID      string `json:"user_id"`
+	ThreadID    string `json:"thread_id,omitempty"`
+	Title       string `json:"title"`
+	ContentFile string `json:"content_file"`
+	UpdatedAt   string `json:"date,omitempty"`
+	ViewCount   int    `json:"view_count"`
 }
 
 func (hr Post) Render(_ http.ResponseWriter, _ *http.Request) error {

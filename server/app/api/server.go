@@ -123,9 +123,10 @@ func (s *Server) routes() {
 
 	s.router.Get("/health", s.handleGetHealth)
 	s.router.Post("/api/v1/posts", s.CreatePostHandler)
-	s.router.Get("/api/v1/posts/{id}/metadata", s.GetPostMetadataHandler)
-	s.router.Get("/api/v1/posts/{id}/markdown", s.GetPostMarkdownHandler)
-	s.router.Get("/api/v1/posts/{limit}", s.GetPostLimitHandler)
+	s.router.Get("/api/v1/posts", s.GetPostListsHandler)
+	s.router.Get("/api/v1/posts/{id}", s.GetPostHandler)
+
+	s.router.Get("/api/v1/files/{id}", s.GetMarkdownHandler)
 
 	s.router.Get("/api/v1/tags", s.ListTagsHandler)
 

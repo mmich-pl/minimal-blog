@@ -115,7 +115,7 @@ func (s *Server) ListThreadsHandler(w http.ResponseWriter, r *http.Request) {
 func (s *Server) ListTagsHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	threads, err := s.postService.ListTags(ctx)
+	tags, err := s.postService.ListTags(ctx)
 	if err != nil {
 		if errors.Is(err, posts.ErrNotFound) {
 			s.log.ErrorContext(
@@ -137,5 +137,5 @@ func (s *Server) ListTagsHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	render.Respond(w, r, threads)
+	render.Respond(w, r, tags)
 }

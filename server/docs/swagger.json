@@ -4,7 +4,92 @@
         "contact": {}
     },
     "paths": {
+        "/api/v1/files/{id}": {
+            "get": {
+                "description": "Fetch the markdown file associated with a post from S3.",
+                "produces": [
+                    "text/markdown"
+                ],
+                "tags": [
+                    "files"
+                ],
+                "summary": "Retrieve post markdown file",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Content File ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Markdown file",
+                        "schema": {
+                            "type": "file"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request or post not found",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/api/v1/posts": {
+            "get": {
+                "description": "Fetch post details from Neo4j along with an image file stored in S3. The response contains post details in JSON format followed by the image file.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "posts"
+                ],
+                "summary": "Retrieve post data along with the associated image",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "limit",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Posts",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Post"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request or post not found",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrResponse"
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "This endpoint allows users to create a new post by submitting text data (title, content, thread, user_id) and a markdown file (.md).",
                 "consumes": [
@@ -69,48 +154,7 @@
                 }
             }
         },
-        "/api/v1/posts/{id}/markdown": {
-            "get": {
-                "description": "Fetch the markdown file associated with a post from S3.",
-                "produces": [
-                    "text/markdown"
-                ],
-                "tags": [
-                    "posts"
-                ],
-                "summary": "Retrieve post markdown file",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Content File ID",
-                        "name": "id",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Markdown file",
-                        "schema": {
-                            "type": "file"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request or post not found",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/posts/{id}/metadata": {
+        "/api/v1/posts/{id}": {
             "get": {
                 "description": "Fetch post details from Neo4j in JSON format.",
                 "consumes": [
@@ -128,7 +172,7 @@
                         "type": "string",
                         "description": "Post ID",
                         "name": "id",
-                        "in": "query",
+                        "in": "path",
                         "required": true
                     }
                 ],
@@ -137,53 +181,6 @@
                         "description": "Post metadata",
                         "schema": {
                             "$ref": "#/definitions/models.Post"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request or post not found",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/errors.ErrResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/api/v1/posts/{limit}": {
-            "get": {
-                "description": "Fetch post details from Neo4j along with an image file stored in S3. The response contains post details in JSON format followed by the image file.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "posts"
-                ],
-                "summary": "Retrieve post data along with the associated image",
-                "parameters": [
-                    {
-                        "type": "integer",
-                        "description": "limit",
-                        "name": "limit",
-                        "in": "query",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Posts",
-                        "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/models.Post"
-                            }
                         }
                     },
                     "400": {
@@ -351,10 +348,16 @@
         "models.Post": {
             "type": "object",
             "properties": {
-                "contentFle": {
+                "content_file": {
+                    "type": "string"
+                },
+                "date": {
                     "type": "string"
                 },
                 "post_id": {
+                    "type": "string"
+                },
+                "thread_id": {
                     "type": "string"
                 },
                 "title": {

@@ -8,7 +8,6 @@ import (
 	"log/slog"
 	"ndb/server/config"
 	"ndb/server/repositories/posts/model"
-	"strconv"
 )
 
 type Store struct {
@@ -41,8 +40,8 @@ func (s *Store) CreateThread(ctx context.Context, thread *model.Thread) (string,
 	session := s.conn.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite})
 	defer session.Close(ctx)
 
+	thread.ThreadID = uuid.New().String()
 	result, err := session.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
-		// Create the thread
 		res, err := tx.Run(
 			ctx,
 			`CREATE (t:Thread {
@@ -52,7 +51,7 @@ func (s *Store) CreateThread(ctx context.Context, thread *model.Thread) (string,
                 updatedAt: $updatedAt
 				}) RETURN t`,
 			map[string]any{
-				"id":        uuid.New().String(),
+				"id":        thread.ThreadID,
 				"name":      thread.Name,
 				"createdAt": thread.CreatedAt,
 				"updatedAt": thread.UpdatedAt,
@@ -74,12 +73,10 @@ func (s *Store) CreateThread(ctx context.Context, thread *model.Thread) (string,
 			slog.Any("thread", thread.Name),
 		)
 
-		record, err := res.Single(ctx)
+		_, err = res.Single(ctx)
 		if err != nil {
 			return nil, err
 		}
-
-		threadID := record.Values[0].(neo4j.Node).ElementId // Retrieve thread ID
 
 		// For each tag, either create a new tag or connect to an existing one
 		for _, tag := range thread.Tags {
@@ -110,7 +107,7 @@ func (s *Store) CreateThread(ctx context.Context, thread *model.Thread) (string,
 			)
 		}
 
-		return threadID, nil
+		return thread.ThreadID, nil
 	})
 	if err != nil {
 		return "", err
@@ -206,6 +203,7 @@ func (s *Store) CreatePost(ctx context.Context, post *model.Post, threadID strin
 	session := s.conn.NewSession(ctx, neo4j.SessionConfig{AccessMode: neo4j.AccessModeWrite})
 	defer session.Close(ctx)
 
+	post.PostID = uuid.New().String()
 	result, err := session.ExecuteWrite(ctx, func(tx neo4j.ManagedTransaction) (any, error) {
 		// Neo4j query to create the Post and connect it to the Thread node
 		query := `MATCH (t:Thread {threadID: $thread})
@@ -222,11 +220,11 @@ func (s *Store) CreatePost(ctx context.Context, post *model.Post, threadID strin
             RETURN p`
 
 		// Run the query with all posts data
-		res, err := tx.Run(
+		_, err := tx.Run(
 			ctx,
 			query,
 			map[string]any{
-				"id":          uuid.New().String(),
+				"id":          post.PostID,
 				"userID":      post.UserID,
 				"title":       post.Title,
 				"contentFile": post.ContentFile,
@@ -246,19 +244,13 @@ func (s *Store) CreatePost(ctx context.Context, post *model.Post, threadID strin
 			return nil, err
 		}
 
-		record, err := res.Single(ctx)
-		if err != nil {
-			return nil, err
-		}
-
 		s.log.InfoContext(
 			ctx,
 			"New posts created successfully",
 			slog.Any("posts", post.Title),
 		)
 
-		// Return the ThreadID
-		return record.Values[0].(neo4j.Node).Props["postID"].(string), nil
+		return post.PostID, nil
 	})
 	if err != nil {
 		return "", err
@@ -386,7 +378,7 @@ RETURN t.name AS thread_name, t.threadID, tags, collect(p)[..$limit] AS posts`
 func mapToPost(node *neo4j.Node) *model.Post {
 	post := model.Post{
 		PostID:      node.Props["postID"].(string),
-		UserID:      strconv.FormatInt(node.Props["userID"].(int64), 10),
+		UserID:      node.Props["userID"].(string),
 		Title:       node.Props["title"].(string),
 		ContentFile: node.Props["contentFile"].(string),
 		ViewCount:   int(node.Props["viewCount"].(int64)),

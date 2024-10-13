@@ -22,9 +22,13 @@ definitions:
     type: object
   models.Post:
     properties:
-      contentFle:
+      content_file:
+        type: string
+      date:
         type: string
       post_id:
+        type: string
+      thread_id:
         type: string
       title:
         type: string
@@ -61,7 +65,65 @@ definitions:
 info:
   contact: {}
 paths:
+  /api/v1/files/{id}:
+    get:
+      description: Fetch the markdown file associated with a post from S3.
+      parameters:
+      - description: Content File ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - text/markdown
+      responses:
+        "200":
+          description: Markdown file
+          schema:
+            type: file
+        "400":
+          description: Invalid request or post not found
+          schema:
+            $ref: '#/definitions/errors.ErrResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/errors.ErrResponse'
+      summary: Retrieve post markdown file
+      tags:
+      - files
   /api/v1/posts:
+    get:
+      consumes:
+      - application/json
+      description: Fetch post details from Neo4j along with an image file stored in
+        S3. The response contains post details in JSON format followed by the image
+        file.
+      parameters:
+      - description: limit
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Posts
+          schema:
+            items:
+              $ref: '#/definitions/models.Post'
+            type: array
+        "400":
+          description: Invalid request or post not found
+          schema:
+            $ref: '#/definitions/errors.ErrResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/errors.ErrResponse'
+      summary: Retrieve post data along with the associated image
+      tags:
+      - posts
     post:
       consumes:
       - multipart/form-data
@@ -106,41 +168,14 @@ paths:
       summary: Create a new post with a markdown file
       tags:
       - posts
-  /api/v1/posts/{id}/markdown:
-    get:
-      description: Fetch the markdown file associated with a post from S3.
-      parameters:
-      - description: Content File ID
-        in: query
-        name: id
-        required: true
-        type: string
-      produces:
-      - text/markdown
-      responses:
-        "200":
-          description: Markdown file
-          schema:
-            type: file
-        "400":
-          description: Invalid request or post not found
-          schema:
-            $ref: '#/definitions/errors.ErrResponse'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/errors.ErrResponse'
-      summary: Retrieve post markdown file
-      tags:
-      - posts
-  /api/v1/posts/{id}/metadata:
+  /api/v1/posts/{id}:
     get:
       consumes:
       - application/json
       description: Fetch post details from Neo4j in JSON format.
       parameters:
       - description: Post ID
-        in: query
+        in: path
         name: id
         required: true
         type: string
@@ -160,39 +195,6 @@ paths:
           schema:
             $ref: '#/definitions/errors.ErrResponse'
       summary: Retrieve post metadata
-      tags:
-      - posts
-  /api/v1/posts/{limit}:
-    get:
-      consumes:
-      - application/json
-      description: Fetch post details from Neo4j along with an image file stored in
-        S3. The response contains post details in JSON format followed by the image
-        file.
-      parameters:
-      - description: limit
-        in: query
-        name: limit
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Posts
-          schema:
-            items:
-              $ref: '#/definitions/models.Post'
-            type: array
-        "400":
-          description: Invalid request or post not found
-          schema:
-            $ref: '#/definitions/errors.ErrResponse'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/errors.ErrResponse'
-      summary: Retrieve post data along with the associated image
       tags:
       - posts
   /api/v1/tags:

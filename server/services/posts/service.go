@@ -66,12 +66,6 @@ func (s *Service) CreatePost(ctx context.Context, file multipart.File, data *api
 		return "", err
 	}
 
-	// Prepare the markdown header
-	header := fmt.Sprintf(
-		"---\ntitle: \"%s\"\nthread: \"%s\"\ndate: \"%s\"\n---\n\n",
-		post.Title, post.ThreadID, post.UpdatedAt,
-	)
-
 	// Read the content of the provided markdown file
 	contentBytes, err := io.ReadAll(file)
 	if err != nil {
@@ -83,9 +77,7 @@ func (s *Service) CreatePost(ctx context.Context, file multipart.File, data *api
 		return "", errors.New("tried to upload empty image")
 	}
 
-	contentWithHeader := append([]byte(header), contentBytes...)
-
-	err = s.fileManager.InsertFile(ctx, post.ContentFile, contentWithHeader)
+	err = s.fileManager.InsertFile(ctx, post.ContentFile, contentBytes)
 	if err != nil {
 		s.log.ErrorContext(ctx, "Error inserting file", slog.Any("error", err))
 		return "", err
@@ -108,12 +100,13 @@ func (s *Service) GetPostMetadata(ctx context.Context, postID string) (*apimodel
 	post.ViewCount += 1
 
 	return &apimodel.Post{
-		PostID:     post.PostID,
-		UserID:     post.UserID,
-		ThreadID:   post.ThreadID,
-		Title:      post.Title,
-		ViewCount:  post.ViewCount,
-		ContentFle: post.ContentFile,
+		PostID:      post.PostID,
+		UserID:      post.UserID,
+		ThreadID:    post.ThreadID,
+		Title:       post.Title,
+		ViewCount:   post.ViewCount,
+		ContentFile: post.ContentFile,
+		UpdatedAt:   post.UpdatedAt,
 	}, nil
 }
 
@@ -144,12 +137,12 @@ func (s *Service) GetPostsWithLimit(ctx context.Context, limit int) (map[string]
 
 			// Append the mapped post to the slice
 			postsResp[key] = append(postsResp[key], &apimodel.Post{
-				PostID:     p.PostID,
-				UserID:     p.UserID,
-				Title:      p.Title,
-				ThreadID:   p.ThreadID,
-				ViewCount:  p.ViewCount,
-				ContentFle: p.ContentFile,
+				PostID:      p.PostID,
+				UserID:      p.UserID,
+				Title:       p.Title,
+				ThreadID:    p.ThreadID,
+				ViewCount:   p.ViewCount,
+				ContentFile: p.ContentFile,
 			})
 		}
 	}

@@ -125,20 +125,20 @@ func validatePostForm(form map[string][]string, requiredFields ...string) error 
 	return nil
 }
 
-// GetPostLimitHandler handles the fetching of a post along with an image file.
+// GetPostListsHandler handles the fetching of a post along with an image file.
 //
 // @Summary Retrieve post data along with the associated image
 // @Description Fetch post details from Neo4j along with an image file stored in S3. The response contains post details in JSON format followed by the image file.
 // @Tags posts
 // @Accept json
 // @Produce json
-// @Param limit query int true "limit"
+// @Param limit query int false "limit"
 // @Header 200 {string} Content-Type "application/json"
 // @Success 200 {object} []models.Post "Posts"
 // @Failure 400 {object} errors.ErrResponse "Invalid request or post not found"
 // @Failure 500 {object} errors.ErrResponse "Internal server error"
-// @Router /api/v1/posts/{limit} [get]
-func (s *Server) GetPostLimitHandler(w http.ResponseWriter, r *http.Request) {
+// @Router /api/v1/posts [get]
+func (s *Server) GetPostListsHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	limit := r.URL.Query().Get("limit")
 
@@ -168,21 +168,21 @@ func (s *Server) GetPostLimitHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// GetPostMetadataHandler handles the fetching of post metadata.
+// GetPostHandler handles the fetching of post metadata.
 //
 // @Summary Retrieve post metadata
 // @Description Fetch post details from Neo4j in JSON format.
 // @Tags posts
 // @Accept json
 // @Produce json
-// @Param id query string true "Post ID"
+// @Param id path string true "Post ID"
 // @Success 200 {object} models.Post "Post metadata"
 // @Failure 400 {object} errors.ErrResponse "Invalid request or post not found"
 // @Failure 500 {object} errors.ErrResponse "Internal server error"
-// @Router /api/v1/posts/{id}/metadata [get]
-func (s *Server) GetPostMetadataHandler(w http.ResponseWriter, r *http.Request) {
+// @Router /api/v1/posts/{id} [get]
+func (s *Server) GetPostHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	postID := r.URL.Query().Get("id")
+	postID := r.PathValue("id")
 
 	if postID == "" {
 		render.Render(w, r, &errors.ErrResponse{
@@ -200,36 +200,36 @@ func (s *Server) GetPostMetadataHandler(w http.ResponseWriter, r *http.Request) 
 	}
 
 	w.Header().Set("Content-Type", "application/json")
-	if err := json.NewEncoder(w).Encode(post); err != nil {
+	if err = json.NewEncoder(w).Encode(post); err != nil {
 		s.log.ErrorContext(ctx, "Error encoding post metadata", slog.Any("error", err))
 		render.Render(w, r, errors.ErrInternalServerError)
 	}
 }
 
-// GetPostMarkdownHandler handles the fetching of a post markdown file.
+// GetMarkdownHandler handles the fetching of a post markdown file.
 //
 // @Summary Retrieve post markdown file
 // @Description Fetch the markdown file associated with a post from S3.
-// @Tags posts
+// @Tags files
 // @Produce text/markdown
-// @Param id query string true "Content File ID"
+// @Param id path string true "Content File ID"
 // @Success 200 {file} file "Markdown file"
 // @Failure 400 {object} errors.ErrResponse "Invalid request or post not found"
 // @Failure 500 {object} errors.ErrResponse "Internal server error"
-// @Router /api/v1/posts/{id}/markdown [get]
-func (s *Server) GetPostMarkdownHandler(w http.ResponseWriter, r *http.Request) {
+// @Router /api/v1/files/{id} [get]
+func (s *Server) GetMarkdownHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	postID := r.URL.Query().Get("id")
+	fileName := r.PathValue("id")
 
-	if postID == "" {
+	if fileName == "" {
 		render.Render(w, r, &errors.ErrResponse{
 			HTTPStatusCode: http.StatusBadRequest,
-			Message:        "postID is empty",
+			Message:        "file_name is empty",
 		})
 		return
 	}
 
-	file, err := s.postService.GetPostMarkdown(ctx, postID)
+	file, err := s.postService.GetPostMarkdown(ctx, fileName)
 	if err != nil {
 		s.log.ErrorContext(ctx, "Error getting post markdown", slog.Any("error", err))
 		render.Render(w, r, errors.ErrInternalServerError)
