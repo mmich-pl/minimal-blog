@@ -58,7 +58,7 @@ const docTemplate = `{
         },
         "/api/v1/posts": {
             "get": {
-                "description": "Fetch post details from Neo4j along with an image file stored in S3. The response contains post details in JSON format followed by the image file.",
+                "description": "Fetch post details from Neo4j. The response contains post details in JSON format followed by the image file.",
                 "consumes": [
                     "application/json"
                 ],
@@ -68,7 +68,7 @@ const docTemplate = `{
                 "tags": [
                     "posts"
                 ],
-                "summary": "Retrieve post data along with the associated image",
+                "summary": "Retrieve post data",
                 "parameters": [
                     {
                         "type": "integer",
@@ -231,6 +231,53 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Not found error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/errors.ErrResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/api/v1/thread/{id}/posts": {
+            "get": {
+                "description": "Fetch post details from Neo4j. The response contains post details in JSON format followed by the image file.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "threads"
+                ],
+                "summary": "Retrieve post data for specified thread",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Post ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Posts",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/models.Post"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request or post not found",
                         "schema": {
                             "$ref": "#/definitions/errors.ErrResponse"
                         }

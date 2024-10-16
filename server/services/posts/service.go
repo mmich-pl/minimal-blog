@@ -150,6 +150,32 @@ func (s *Service) GetPostsWithLimit(ctx context.Context, limit int) (map[string]
 	return postsResp, nil
 }
 
+func (s *Service) ListPostInThread(ctx context.Context, threadID string) ([]*apimodel.Post, error) {
+	p, err := s.store.GetPostsInThread(ctx, threadID)
+	if err != nil {
+		s.log.ErrorContext(ctx, "Error listing posts", slog.Any("error", err), slog.Any("thread_id", threadID))
+		return nil, err
+	}
+
+	if len(p) == 0 {
+		return nil, fmt.Errorf("%w: no posts was found", ErrNotFound)
+	}
+
+	var posts []*apimodel.Post
+	for _, post := range p {
+		posts = append(posts, &apimodel.Post{
+			PostID:      post.PostID,
+			UserID:      post.UserID,
+			Title:       post.Title,
+			ThreadID:    post.ThreadID,
+			ViewCount:   post.ViewCount,
+			ContentFile: post.ContentFile,
+		})
+	}
+
+	return posts, nil
+}
+
 func (s *Service) ListThreads(ctx context.Context) ([]*apimodel.Thread, error) {
 	t, err := s.store.ListThreads(ctx)
 	if err != nil {

@@ -96,9 +96,8 @@ paths:
     get:
       consumes:
       - application/json
-      description: Fetch post details from Neo4j along with an image file stored in
-        S3. The response contains post details in JSON format followed by the image
-        file.
+      description: Fetch post details from Neo4j. The response contains post details
+        in JSON format followed by the image file.
       parameters:
       - description: limit
         in: query
@@ -121,7 +120,7 @@ paths:
           description: Internal server error
           schema:
             $ref: '#/definitions/errors.ErrResponse'
-      summary: Retrieve post data along with the associated image
+      summary: Retrieve post data
       tags:
       - posts
     post:
@@ -220,6 +219,38 @@ paths:
       summary: List all tags
       tags:
       - tags
+  /api/v1/thread/{id}/posts:
+    get:
+      consumes:
+      - application/json
+      description: Fetch post details from Neo4j. The response contains post details
+        in JSON format followed by the image file.
+      parameters:
+      - description: Post ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Posts
+          schema:
+            items:
+              $ref: '#/definitions/models.Post'
+            type: array
+        "400":
+          description: Invalid request or post not found
+          schema:
+            $ref: '#/definitions/errors.ErrResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/errors.ErrResponse'
+      summary: Retrieve post data for specified thread
+      tags:
+      - threads
   /api/v1/threads:
     get:
       description: Fetches a list of all available threads

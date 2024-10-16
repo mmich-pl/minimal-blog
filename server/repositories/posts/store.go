@@ -296,7 +296,7 @@ func (s *Store) GetPostsInThread(ctx context.Context, threadID string) ([]*model
 
 	result, err := session.ExecuteRead(ctx, func(tx neo4j.ManagedTransaction) (interface{}, error) {
 		query := `
-            MATCH (p:Post)-[:BELONGS_TO]->(t:Thread {id: $threadID})
+            MATCH (p:Post)-[:BELONGS_TO]->(t:Thread {threadID: $threadID})
             WHERE p.status = 'published'
             RETURN p`
 

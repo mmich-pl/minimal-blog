@@ -125,10 +125,10 @@ func validatePostForm(form map[string][]string, requiredFields ...string) error 
 	return nil
 }
 
-// GetPostListsHandler handles the fetching of a post along with an image file.
+// GetPostListsHandler handles the fetching of a post data.
 //
-// @Summary Retrieve post data along with the associated image
-// @Description Fetch post details from Neo4j along with an image file stored in S3. The response contains post details in JSON format followed by the image file.
+// @Summary Retrieve post data
+// @Description Fetch post details from Neo4j. The response contains post details in JSON format followed by the image file.
 // @Tags posts
 // @Accept json
 // @Produce json
@@ -187,7 +187,7 @@ func (s *Server) GetPostHandler(w http.ResponseWriter, r *http.Request) {
 	if postID == "" {
 		render.Render(w, r, &errors.ErrResponse{
 			HTTPStatusCode: http.StatusBadRequest,
-			Message:        "postID is empty",
+			Message:        "post_id is empty",
 		})
 		return
 	}

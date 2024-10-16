@@ -132,4 +132,5 @@ func (s *Server) routes() {
 
 	s.router.Post("/api/v1/threads", s.CreateThreadHandler)
 	s.router.Get("/api/v1/threads", s.ListThreadsHandler)
+	s.router.Get("/api/v1/thread/{id}/posts", s.ListPostsInThreadHandler)
 }

@@ -139,3 +139,55 @@ func (s *Server) ListTagsHandler(w http.ResponseWriter, r *http.Request) {
 
 	render.Respond(w, r, tags)
 }
+
+// ListPostsInThreadHandler handles the fetching of a posts for specified thread.
+//
+// @Summary Retrieve post data for specified thread
+// @Description Fetch post details from Neo4j. The response contains post details in JSON format followed by the image file.
+// @Tags threads
+// @Accept json
+// @Produce json
+// @Param id path string true "Post ID"
+// @Header 200 {string} Content-Type "application/json"
+// @Success 200 {object} []models.Post "Posts"
+// @Failure 400 {object} errors.ErrResponse "Invalid request or post not found"
+// @Failure 500 {object} errors.ErrResponse "Internal server error"
+// @Router /api/v1/thread/{id}/posts [get]
+func (s *Server) ListPostsInThreadHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	threadID := r.PathValue("id")
+
+	if threadID == "" {
+		render.Render(w, r, &apierr.ErrResponse{
+			HTTPStatusCode: http.StatusBadRequest,
+			Message:        "post_id is empty",
+		})
+		return
+	}
+
+	postList, err := s.postService.ListPostInThread(ctx, threadID)
+	if err != nil {
+		if errors.Is(err, posts.ErrNotFound) {
+			s.log.ErrorContext(
+				ctx,
+				"No posts found",
+				slog.Any("error", err),
+			)
+			render.Render(w, r, apierr.ErrNotFound)
+			return
+		}
+
+		s.log.ErrorContext(
+			ctx,
+			"Failed to fetch posts in thread",
+			slog.Any("error", err),
+			slog.Any("thread_id", threadID),
+		)
+
+		render.Render(w, r, apierr.ErrInternalServerError)
+		return
+	}
+
+	render.Respond(w, r, postList)
+}
