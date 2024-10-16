@@ -7,6 +7,7 @@ import (
 	"github.com/gocql/gocql"
 	"log"
 	"os"
+	"strings"
 	"time"
 )
 
@@ -18,10 +19,20 @@ func main() {
 	flag.StringVar(&endDateStr, "end", "", "End date in format YYYY-MM-DD (optional)")
 	flag.StringVar(&logLevel, "loglevel", "", "Log level to filter (optional)")
 	flag.StringVar(&messageSubstr, "message", "", "Substring in message to filter (optional)")
-	flag.StringVar(&outputFile, "output", fmt.Sprintf("log_%v.csv", time.Now().Format(time.DateOnly)), "Output CSV file")
+	flag.StringVar(&outputFile, "output",
+		fmt.Sprintf("log_%s.csv", strings.Replace(time.Now().Format(time.DateTime), " ", "_", 1)),
+		"Output CSV file",
+	)
 	flag.Var((*stringArrayFlag)(&attributes), "attr", "Attributes to filter (can be used multiple times)")
 
+	help := flag.Bool("help", false, "Display help information")
+
 	flag.Parse()
+
+	if *help {
+		flag.Usage()
+		return
+	}
 
 	startDate, _ := parseDate(startDateStr)
 	endDate, _ := parseDate(endDateStr)
